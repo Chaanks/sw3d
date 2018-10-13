@@ -4,6 +4,6 @@ extern crate winit;
 extern crate vulkano_win;
 
 
-mod render;
-mod window;
+pub mod render;
+pub mod window;
 
