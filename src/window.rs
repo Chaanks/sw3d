@@ -23,6 +23,8 @@ use vulkano::{
     },
 };
 use vulkano_win::VkSurfaceBuild;
+use vulkano::command_buffer::DynamicState;
+use vulkano::pipeline::viewport::Viewport;
 
 use winit;
 use winit::EventsLoop;
@@ -50,6 +52,7 @@ pub struct Window {
     pub images: Vec<Arc<SwapchainImage<winit::Window>>>,
     pub render_pass: Arc<RenderPassAbstract + Send + Sync>,
     pub debug_callback: Arc<DebugCallback>,
+    pub dynamic_state: DynamicState,
 }
 
 impl Window {
@@ -132,7 +135,7 @@ impl Window {
 
         let queue = queues.next().expect("Failed to get our queue");
 
-        let ((swapchain, images), _surface_dimensions) = {
+        let ((swapchain, images), surface_dimensions) = {
 
             let caps = surface.capabilities(physical)
                 .expect("Failed to get surface capabilities");
@@ -145,6 +148,16 @@ impl Window {
                              surface_dimensions, 1, caps.supported_usage_flags, &queue,
                              SurfaceTransform::Identity, alpha, PresentMode::Fifo, true,
                              None).expect("failed to create swapchain"), surface_dimensions)
+        };
+
+        let dynamic_state = DynamicState {
+            line_width: None,
+            viewports: Some(vec![Viewport {
+                origin: [0.0, 0.0],
+                dimensions: [surface_dimensions[0] as f32, surface_dimensions[1] as f32],
+                depth_range: 0.0 .. 1.0,
+            }]),
+            scissors: None,
         };
 
         let render_pass = Arc::new(single_pass_renderpass!(device.clone(),
@@ -170,7 +183,8 @@ impl Window {
             device,
             images,
             render_pass,
-            debug_callback: debug_callback.clone(), 
+            debug_callback: debug_callback.clone(),
+            dynamic_state,
         }
 
     }
