@@ -20,7 +20,6 @@ use vulkano::{
         Surface,
         SurfaceTransform,
         Swapchain,
-        SwapchainCreationError,
     },
 };
 use vulkano_win::VkSurfaceBuild;
@@ -29,7 +28,6 @@ use winit;
 use winit::EventsLoop;
 use vulkano_win::required_extensions;
 use vulkano::instance::debug::DebugCallback;
-use std::mem;
 
 
 const VALIDATION_LAYERS: &[&str] =  &[
@@ -151,22 +149,16 @@ impl Window {
 
         let render_pass = Arc::new(single_pass_renderpass!(device.clone(),
             attachments: {
-                 color: {
+                color: {
                     load: Clear,
                     store: Store,
                     format: swapchain.format(),
-                    samples: 1,
-                },
-                depth: {
-                    load: Clear,
-                    store: DontCare,
-                    format: vulkano::format::Format::D16Unorm,
                     samples: 1,
                 }
             },
             pass: {
                 color: [color],
-                depth_stencil: {depth}
+                depth_stencil: {}
             }
         ).unwrap());
 
@@ -183,6 +175,18 @@ impl Window {
 
     }
 
+    pub fn run(&mut self) {
+        self.events_loop.run_forever(|event| {
+        match event {
+            winit::Event::WindowEvent { event: winit::WindowEvent::CloseRequested, .. } => {
+                winit::ControlFlow::Break
+            },
+
+            _ => winit::ControlFlow::Continue,
+        }
+    });
+
+    }
     fn check_validation_layer_support() -> bool {
         let layers: Vec<_> = layers_list().unwrap().map(|l| l.name().to_owned()).collect();
         VALIDATION_LAYERS.iter()

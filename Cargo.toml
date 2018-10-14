@@ -3,6 +3,16 @@ name = "sw3d"
 version = "0.1.0"
 authors = ["Jarod <jarod8405@gmail.com>"]
 
+
+[lib]
+name = "sw3d"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bin"
+path = "src/bin/test.rs"
+
+
 [dependencies]
 winit = "0.17"
 vulkano = "0.10"
