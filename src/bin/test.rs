@@ -6,7 +6,8 @@ use sw3d::vulkano::sync::now;
 use sw3d::vulkano::sync::GpuFuture;
 use sw3d::vulkano::swapchain;
 use sw3d::vulkano::command_buffer::AutoCommandBuffer;
-
+use sw3d::render::mesh;
+use sw3d::render::Vertex;
 
 fn main () {
     println!("ez");
@@ -14,17 +15,34 @@ fn main () {
     let mut render = sw3d::render::Renderer::new(window.device.clone(), window.render_pass.clone(), 
                                                  window.images.clone(), 1.0);
 
+
+    let vertex_positions = [ 
+            Vertex { position: [0.0, -0.5] },
+            Vertex { position: [0.5, 0.5] },
+            Vertex { position: [-0.5, 0.5] }
+    ];
+
+    let triangle = mesh::Mesh::new(vertex_positions.to_vec(), window.device.clone());
+
+
+    let vertex_positions = [ 
+            Vertex { position: [-0.5, 1.0] },
+            Vertex { position: [-1.0, 0.0] },
+            Vertex { position: [0.0, 0.0] }
+    ];
+
+    let triangle2 = mesh::Mesh::new(vertex_positions.to_vec(), window.device.clone());
+
+
+    render.meshs.push(triangle);
+    render.meshs.push(triangle2);
+
+
     let mut previous_frame_end = Box::new(now(window.device.clone())) as Box<GpuFuture>;
     loop {
         previous_frame_end.cleanup_finished();
         
         
-
-/*
-        let command_buffers: Vec<Arc<AutoCommandBuffer>> = render.draw(window.device.clone(), window.queue.clone(), &window.dynamic_state);       
-        let command_buffer = command_buffers[image_num].clone();
-*/
-
         let (image_num, acquire_future) = swapchain::acquire_next_image(window.swapchain.clone(), None).unwrap();
         let command_buffer: AutoCommandBuffer = render.draw(window.device.clone(), window.queue.clone(), &window.dynamic_state, image_num);
 
