@@ -6,10 +6,45 @@ use sw3d::vulkano::sync::now;
 use sw3d::vulkano::sync::GpuFuture;
 use sw3d::vulkano::swapchain;
 use sw3d::vulkano::command_buffer::AutoCommandBuffer;
-use sw3d::render::mesh;
+use sw3d::render::mesh::Mesh;
 use sw3d::render::Vertex;
+use sw3d::render::RendererBundle;
+use sw3d::app::Application;
+use sw3d::{game_data::GameData, game_data::GameDataBuilder, state::StateData, state::State};
+
+
+pub struct MainState;
+
+impl <'a, 'b>State<GameData<'a, 'b>> for MainState {
+    fn on_start(&mut self, data: &mut StateData<GameData>) {
+        
+        data.world.register::<Mesh>();
+
+        //data.world.create_entity().with(Mesh {name: "Hello world".to_string()} ).build();
+    }
+
+    fn handle_event(&mut self, data: &mut StateData<GameData>) {
+        
+    }
+
+    fn update(&mut self, data: &mut StateData<GameData>) {
+        data.data.update(&data.world);
+    }
+}
+
 
 fn main () {
+
+    let mut game= GameDataBuilder::new()
+        //.with(HelloSystem, "hello_system", &[])
+        .with_bundle(RendererBundle).unwrap();
+
+
+    let mut state = MainState { };
+    let mut app = Application::new(game, 400, 400, "test");
+    app.run(state);
+}
+/*
     println!("ez");
     let mut window = sw3d::window::Window::new(800, 600, "Test");
     let mut render = sw3d::render::Renderer::new(window.device.clone(), window.render_pass.clone(), 
@@ -44,7 +79,7 @@ fn main () {
         
         
         let (image_num, acquire_future) = swapchain::acquire_next_image(window.swapchain.clone(), None).unwrap();
-        let command_buffer: AutoCommandBuffer = render.draw(window.device.clone(), window.queue.clone(), &window.dynamic_state, image_num);
+        let command_buffer: AutoCommandBuffer = render.update(window.device.clone(), window.queue.clone(), &window.dynamic_state, image_num);
 
         let future = previous_frame_end.join(acquire_future)
             .then_execute(window.queue.clone(), command_buffer).unwrap()
@@ -62,5 +97,5 @@ fn main () {
         });
         
         if done {return;}
-    }                                
-}
+    }
+*/                        

@@ -3,6 +3,8 @@ use std::sync::Arc;
 use vulkano::buffer::{CpuAccessibleBuffer, BufferUsage};
 use vulkano::device::Device;
 use render::Vertex;
+use specs::{Component, VecStorage};
+
 
 pub struct Mesh {
     pub vertex_buffer: Arc<CpuAccessibleBuffer<[Vertex]>>
@@ -21,4 +23,8 @@ impl Mesh {
             vertex_buffer,
         }
     }
+}
+
+impl Component for Mesh {
+    type Storage = VecStorage<Self>;
 }

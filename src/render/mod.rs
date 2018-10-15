@@ -12,6 +12,8 @@ use vulkano::command_buffer::{ AutoCommandBuffer, DynamicState, AutoCommandBuffe
 use vulkano::buffer::{ BufferUsage, CpuAccessibleBuffer };
 use vulkano::device::{ Device, Queue};
 use vulkano::image::{ SwapchainImage};
+use specs::{System, VecStorage, Component, Builder, ReadStorage, DispatcherBuilder, World};
+use bundle::SystemBundle;
 
 
 #[derive(Debug, Clone)]
@@ -94,25 +96,11 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, device: Arc<Device>, queue: Arc<Queue>, dynamic_state: &DynamicState, id: usize) -> AutoCommandBuffer {
-        let vertex_positions = [ 
-            Vertex { position: [0.0, -0.5] },
-            Vertex { position: [0.5, 0.5] },
-            Vertex { position: [-0.5, 0.5] }
-
-        ];
-
-        let vertex_buffer: Arc<CpuAccessibleBuffer<[Vertex]>> = CpuAccessibleBuffer::from_iter(device.clone(), BufferUsage::all(),
-            vertex_positions
-                .into_iter()
-                .cloned())
-            .expect("Failed to create buffer");
-        
+    pub fn update(&mut self, device: Arc<Device>, queue: Arc<Queue>, dynamic_state: &DynamicState, id: usize) -> AutoCommandBuffer {        
         let mut _command_buffer = AutoCommandBufferBuilder::primary_one_time_submit(device.clone(), queue.family()).unwrap()
             .begin_render_pass(
                 self.swapchain_framebuffers[id].clone(), false,vec![[0.0, 0.0, 0.0, 1.0].into()])
                     .unwrap()
-                    //.draw(self.graphics_pipeline.clone(), &dynamic_state, vertex_buffer.clone(), (), ()).unwrap()
                     .draw_mesh(self, &dynamic_state, id);
 
         let command_buffer = _command_buffer.end_render_pass().unwrap()
@@ -135,6 +123,26 @@ impl Renderer {
     }
 
 
+}
+
+
+pub struct RendererSystem;
+impl <'a> System<'a> for RendererSystem {
+    type SystemData = ReadStorage<'a, Mesh>;
+    fn run(&mut self, data: Self::SystemData) {
+        use specs::Join;
+        for mesh in data.join() {
+            println!("Renderer System");
+        }
+    }
+}
+
+pub struct RendererBundle;
+impl <'a, 'b>SystemBundle<'a, 'b> for RendererBundle {
+    fn build(self, builder: &mut DispatcherBuilder<'a, 'b>) -> Result<(),()> {
+        builder.add(RendererSystem, "renderer_system", &[]);
+        Ok(())
+    }
 }
 
 
