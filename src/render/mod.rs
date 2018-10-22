@@ -132,7 +132,7 @@ impl <'a> System<'a> for RendererSystem {
     fn run(&mut self, data: Self::SystemData) {
         use specs::Join;
         for mesh in data.join() {
-            println!("Renderer System");
+            
         }
     }
 }
