@@ -29,15 +29,17 @@ impl Mesh {
                 .cloned())
             .expect("Failed to create buffer");
 
-        let (texture, tex_future) = {
+        let (texture, _tex_future) = {
             //let image = image::load_from_memory_with_format(include_bytes!("test"),image::ImageFormat::PNG).unwrap().to_rgba();
 
             let image = image::open(&Path::new(&path)).unwrap().to_rgba();
+            let (width, height) = image.dimensions();
+
             let image_data = image.into_raw().clone();
 
             vulkano::image::immutable::ImmutableImage::from_iter(
                 image_data.iter().cloned(),
-                vulkano::image::Dimensions::Dim2d { width: 960, height: 640 },
+                vulkano::image::Dimensions::Dim2d { width, height },
                 vulkano::format::R8G8B8A8Srgb,
                 queue.clone()).unwrap()
         };

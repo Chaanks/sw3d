@@ -163,7 +163,10 @@ impl Render{
         } ;
 
         let events_loop = winit::EventsLoop::new();
-        let surface = winit::WindowBuilder::new().build_vk_surface(&events_loop, instance.clone()).unwrap();
+        let surface = winit::WindowBuilder::new()
+            .with_dimensions((width, height).into())
+            .with_title(title)
+            .build_vk_surface(&events_loop, instance.clone()).unwrap();
 
         let queue_familie = physical.queue_families().find(|&q| {
             q.supports_graphics() && surface.is_supported(q).unwrap_or(false)
@@ -348,7 +351,7 @@ impl DrawMeshTrait for AutoCommandBufferBuilder {
     }
 }
 
-pub const Cube : [Vertex;36] = [
+pub const CUBE : [Vertex;36] = [
         Vertex { pos: [-0.5, -0.5, -0.5], uv: [ 0.0, 0.0]},
         Vertex { pos: [0.5, -0.5, -0.5], uv: [1.0, 0.0]},
         Vertex { pos: [0.5,  0.5, -0.5], uv: [1.0, 1.0]},
