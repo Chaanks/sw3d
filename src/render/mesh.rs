@@ -9,6 +9,8 @@ use render::Vertex;
 use image;
 use vulkano;
 use render;
+use render::transform::Transform;
+use render::vs;
 
 type ConcreteGraphicsPipeline = GraphicsPipeline<SingleBufferDefinition<Vertex>, std::boxed::Box<vulkano::descriptor::PipelineLayoutAbstract + std::marker::Send + std::marker::Sync>, std::sync::Arc<vulkano::framebuffer::RenderPassAbstract + std::marker::Send + std::marker::Sync>>;
 type ConcreteDescriptor = vulkano::descriptor::descriptor_set::PersistentDescriptorSet<std::sync::Arc<vulkano::pipeline::GraphicsPipeline<vulkano::pipeline::vertex::SingleBufferDefinition<render::Vertex>, std::boxed::Box<vulkano::descriptor::PipelineLayoutAbstract + std::marker::Send + std::marker::Sync>, std::sync::Arc<vulkano::framebuffer::RenderPassAbstract + std::marker::Send + std::marker::Sync>>>, (((), vulkano::descriptor::descriptor_set::PersistentDescriptorSetImg<std::sync::Arc<vulkano::image::ImmutableImage<vulkano::format::R8G8B8A8Srgb>>>), vulkano::descriptor::descriptor_set::PersistentDescriptorSetSampler)>;
@@ -18,6 +20,7 @@ pub struct Mesh {
     pub texture: Arc<vulkano::image::ImmutableImage<vulkano::format::R8G8B8A8Srgb>>,
     pub sampler: Arc<vulkano::sampler::Sampler>,
     pub set: Arc<ConcreteDescriptor>,
+    pub transform: Transform,
 }
 
 impl Mesh {
@@ -57,11 +60,32 @@ impl Mesh {
             .build().unwrap()
         );
 
+        let transform = Transform::new();
+
         Self {
             vertex_buffer,
             texture,
             sampler,
             set,
+            transform,
         }
     }
+
+
+    pub fn update(&self) -> render::vs::ty::Data {
+
+            let position: [f32; 3] = self.transform.position.into();
+            let rotation: [[f32; 4]; 4] = self.transform.rotation.into();
+            let scale: [[f32; 4]; 4] = self.transform.scale.into();
+
+            let uniform_data = vs::ty::Data {
+                position: position,
+                rotation: rotation,
+                scale: scale,
+                _dummy0: [0; 4]
+            };
+
+            uniform_data
+    }
+
 }

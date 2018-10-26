@@ -1,4 +1,6 @@
 pub mod mesh;
+pub mod transform;
+
 
 use std::sync::Arc;
 use std;
@@ -37,7 +39,6 @@ use vulkano::framebuffer::*;
 use vulkano::command_buffer::{ AutoCommandBuffer, DynamicState, AutoCommandBufferBuilder};
 use vulkano::sync::now;
 use vulkano::sync::GpuFuture;
-
 use vulkano_win::{ VkSurfaceBuild, required_extensions };
 
 use winit;
@@ -64,7 +65,7 @@ pub struct Vertex {
 impl_vertex!(Vertex, pos, uv);
 
 #[allow(unused)]
-mod vs {
+pub mod vs {
     #[derive(VulkanoShader)]
     #[ty = "vertex"]
     #[path = "src/shaders/vertex_shader.glsl"]
@@ -73,7 +74,7 @@ mod vs {
     struct Dummy;
 }
 #[allow(unused)]
-mod fs {
+pub mod fs {
     #[derive(VulkanoShader)]
     #[ty = "fragment"]
     #[path = "src/shaders/fragment_shader.glsl"]
@@ -97,6 +98,7 @@ pub struct Render {
     pub debug_callback: Arc<DebugCallback>,
     pub dynamic_state: DynamicState,
     pub dpi_factor: f64,
+    pub ubo: vulkano::buffer::CpuBufferPool<vs::ty::Data>,
     pub graphics_pipeline: Arc<ConcreteGraphicsPipeline>,
     pub swapchain_framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     pub meshs: Vec<mesh::Mesh>,
@@ -105,7 +107,6 @@ pub struct Render {
 impl Render{
     
     pub fn new(width: u32, height: u32, title: &str) -> Self {
-
         let instance = {
 
             match InstanceExtensions::supported_by_core() {
@@ -227,12 +228,17 @@ impl Render{
 
         let dpi_factor = 1.0;
 
+        let ubo = vulkano::buffer::cpu_pool::CpuBufferPool::<vs::ty::Data>
+            ::new(device.clone(), vulkano::buffer::BufferUsage::all());
+
+        
         let vs = vs::Shader::load(device.clone())
             .expect("Failed to create shader module");
         
         let fs = fs::Shader::load(device.clone())
             .expect("Failed to create fragment module");
-        
+
+        println!("test");
         let graphics_pipeline = Arc::new(GraphicsPipeline::start()
             //.vertex_input(vulkano::pipeline::vertex::TwoBuffersDefinition::new())
             .vertex_input_single_buffer::<Vertex>()
@@ -245,7 +251,7 @@ impl Render{
             .expect("Failed to create graphics pipeline")
             
         );
-
+        println!("test2");
         let swapchain_framebuffers = images.iter()
             .map(|image| {
                 let fba: Arc<FramebufferAbstract + Send + Sync> = Arc::new(Framebuffer::start(render_pass.clone())
@@ -269,6 +275,7 @@ impl Render{
             debug_callback: debug_callback.clone(),
             dynamic_state,
             dpi_factor,
+            ubo,
             swapchain_framebuffers,
             graphics_pipeline,
             meshs,
@@ -315,7 +322,6 @@ impl Render{
             .begin_render_pass(
                 self.swapchain_framebuffers[image_num].clone(), false,vec![[0.0, 0.0, 0.0, 1.0].into()])
                     .unwrap()
-                    //.draw(self.graphics_pipeline.clone(), &dynamic_state, vertex_buffer.clone(), (), ()).unwrap()
                     .draw_mesh(self);
 
         let command_buffer = _command_buffer.end_render_pass().unwrap()
@@ -326,6 +332,17 @@ impl Render{
 
     fn draw_mesh(&mut self, mut command_buffer: AutoCommandBufferBuilder) -> AutoCommandBufferBuilder {
         for mesh in self.meshs.iter() {
+
+
+            let uniform_data = mesh.update();
+
+            let uniform_buffer_subbuffer = self.ubo.next(uniform_data).unwrap();
+
+            Arc::new(vulkano::descriptor::descriptor_set::PersistentDescriptorSet::start(self.graphics_pipeline.clone(), 0)
+                .add_buffer(uniform_buffer_subbuffer).unwrap()
+                .build().unwrap()
+            );
+      
             command_buffer = command_buffer
                 .draw(
                 self.graphics_pipeline.clone(),
