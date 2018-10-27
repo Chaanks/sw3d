@@ -335,10 +335,10 @@ impl Render{
 
 
             let uniform_data = mesh.update();
-
             let uniform_buffer_subbuffer = self.ubo.next(uniform_data).unwrap();
 
-            Arc::new(vulkano::descriptor::descriptor_set::PersistentDescriptorSet::start(self.graphics_pipeline.clone(), 0)
+            let set = Arc::new(vulkano::descriptor::descriptor_set::PersistentDescriptorSet::start(self.graphics_pipeline.clone(), 0)
+                .add_sampled_image(mesh.texture.clone(), mesh.sampler.clone()).unwrap()
                 .add_buffer(uniform_buffer_subbuffer).unwrap()
                 .build().unwrap()
             );
@@ -348,7 +348,7 @@ impl Render{
                 self.graphics_pipeline.clone(),
                 &self.dynamic_state,
                 mesh.vertex_buffer.clone(), 
-                mesh.set.clone(), ()).unwrap()
+                set.clone(), ()).unwrap()
         }
 
         command_buffer

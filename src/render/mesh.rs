@@ -19,7 +19,7 @@ pub struct Mesh {
     pub vertex_buffer: Arc<CpuAccessibleBuffer<[Vertex]>>,
     pub texture: Arc<vulkano::image::ImmutableImage<vulkano::format::R8G8B8A8Srgb>>,
     pub sampler: Arc<vulkano::sampler::Sampler>,
-    pub set: Arc<ConcreteDescriptor>,
+    //pub set: Arc<ConcreteDescriptor>,
     pub transform: Transform,
 }
 
@@ -55,10 +55,12 @@ impl Mesh {
                                                     vulkano::sampler::SamplerAddressMode::Repeat,
                                                     0.0, 1.0, 0.0, 0.0).unwrap();
 
+/*
         let set = Arc::new(vulkano::descriptor::descriptor_set::PersistentDescriptorSet::start(pipeline.clone(), 0)
             .add_sampled_image(texture.clone(), sampler.clone()).unwrap()
             .build().unwrap()
         );
+*/
 
         let transform = Transform::new();
 
@@ -66,7 +68,6 @@ impl Mesh {
             vertex_buffer,
             texture,
             sampler,
-            set,
             transform,
         }
     }
