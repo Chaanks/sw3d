@@ -2,6 +2,7 @@ use cgmath::{
     SquareMatrix,
     Matrix4,
     Vector3,
+
 };
 
 
@@ -25,6 +26,33 @@ impl Transform {
     }
 
     pub fn scale(&mut self, value: f32) {
-        self.scale = Matrix4::from_scale(value);
+        self.scale += Matrix4::from_scale(value);
     }
+
+    pub fn translate(&mut self, x: f32, y: f32, z: f32) {
+        self.position.x += x;
+        self.position.y += y;
+        self.position.z += z;
+    }
+
+    pub fn rotate(&mut self, angle: f32, vector: [f32; 3]) {
+        self.rotation += Matrix4::from_axis_angle(Vector3::from(vector), cgmath::Deg(angle));
+    }
+
+    pub fn rotate_x(&mut self, angle: f32) {
+        self.rotation += Matrix4::from_angle_x(cgmath::Deg(angle));
+    }
+
+    pub fn rotate_y(&mut self, angle: f32) {
+        self.rotation += Matrix4::from_angle_y(cgmath::Deg(angle));
+    }
+    
+    pub fn rotate_z(&mut self, angle: f32) {
+        self.rotation += Matrix4::from_angle_z(cgmath::Deg(angle));
+    }
+
+    pub fn translation_matrix(&self) -> Matrix4<f32> {
+        Matrix4::from_translation(self.position)
+    }
+
 }

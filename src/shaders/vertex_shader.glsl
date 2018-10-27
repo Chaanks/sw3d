@@ -8,13 +8,13 @@ layout(location = 1) out vec2 v_tex_coords;
 
 
 layout(set = 0, binding = 1) uniform Data {
-    vec3 position;
+    mat4 translation;
     mat4 rotation;
     mat4 scale;
 } uniforms;
 
 
 void main() {
-    gl_Position = uniforms.scale * vec4(pos, 1.0);
+    gl_Position =  uniforms.translation * uniforms.rotation * uniforms.scale * vec4(pos, 1.0);
     v_tex_coords = uv;
 }
