@@ -87,11 +87,10 @@ pub mod fs {
 type ConcreteGraphicsPipeline = GraphicsPipeline<SingleBufferDefinition<Vertex>, std::boxed::Box<vulkano::descriptor::PipelineLayoutAbstract + std::marker::Send + std::marker::Sync>, std::sync::Arc<vulkano::framebuffer::RenderPassAbstract + std::marker::Send + std::marker::Sync>>;
 
 
-pub struct Render {
+pub struct Context {
     pub surface: Arc<Surface<winit::Window>>,
     pub swapchain: Arc<Swapchain<winit::Window>>,
     pub queue: Arc<Queue>,
-    pub events_loop: EventsLoop,
     pub device: Arc<Device>,
     pub images: Vec<Arc<SwapchainImage<winit::Window>>>,
     pub render_pass: Arc<RenderPassAbstract + Send + Sync>,
@@ -104,9 +103,9 @@ pub struct Render {
     pub meshs: Vec<mesh::Mesh>,
 }
 
-impl Render{
+impl Context{
     
-    pub fn new(width: u32, height: u32, title: &str) -> Self {
+    pub fn new(width: u32, height: u32, title: &str) -> (Self, EventsLoop) {
         let instance = {
 
             match InstanceExtensions::supported_by_core() {
@@ -264,11 +263,10 @@ impl Render{
 
         let meshs = Vec::new();
 
-        Self {
+        (Self {
             surface,
             swapchain,
             queue,
-            events_loop,
             device,
             images,
             render_pass,
@@ -279,45 +277,36 @@ impl Render{
             swapchain_framebuffers,
             graphics_pipeline,
             meshs,
-        }
+        }, events_loop)
 
     }
 
-    pub fn run(&mut self) {
-    let mut previous_frame_end = Box::new(now(self.device.clone())) as Box<GpuFuture>;
-        loop {
+    pub fn update(&mut self) {
+        let mut previous_frame_end = Box::new(now(self.device.clone())) as Box<GpuFuture>;
             previous_frame_end.cleanup_finished();
             
             
             let (image_num, acquire_future) = swapchain::acquire_next_image(self.swapchain.clone(), None).unwrap();
-            let command_buffer: AutoCommandBuffer = self.draw(image_num);
+            let command_buffer: AutoCommandBuffer = self.draw_meshs(image_num);
+            self.meshs.clear();
 
             let future = previous_frame_end.join(acquire_future)
                 .then_execute(self.queue.clone(), command_buffer).unwrap()
                 .then_swapchain_present(self.queue.clone(), self.swapchain.clone(), image_num)
                 .then_signal_fence_and_flush().unwrap();
-            previous_frame_end = Box::new(future) as Box<_>;
 
-            let mut done = false;
-            self.events_loop.poll_events(|event| {
-                match event {
-                    winit::Event::WindowEvent { event: winit::WindowEvent::CloseRequested, .. } => done = true,
-                    _ => (),
-                }
-
-            });
-            
-            if done {return;}
-        }               
+            //previous_frame_end = Box::new(future) as Box<_>;
+                      
 
     }
+    
     fn check_validation_layer_support() -> bool {
         let layers: Vec<_> = layers_list().unwrap().map(|l| l.name().to_owned()).collect();
         VALIDATION_LAYERS.iter()
             .all(|layer_name| layers.contains(&layer_name.to_string()))
     }
 
-    pub fn draw(&mut self, image_num: usize ) -> AutoCommandBuffer {         
+    pub fn draw_meshs(&mut self, image_num: usize ) -> AutoCommandBuffer {         
         let mut _command_buffer = AutoCommandBufferBuilder::primary_one_time_submit(self.device.clone(), self.queue.family()).unwrap()
             .begin_render_pass(
                 self.swapchain_framebuffers[image_num].clone(), false,vec![[0.0, 0.0, 0.0, 1.0].into()])
@@ -354,16 +343,20 @@ impl Render{
         command_buffer
     }
 
+    pub fn draw(&mut self, mesh: mesh::Mesh) {
+        self.meshs.push(mesh);
+    }
+
 
 }
 
 
 pub trait DrawMeshTrait {
-    fn draw_mesh(self, data: &mut Render) -> AutoCommandBufferBuilder;
+    fn draw_mesh(self, data: &mut Context) -> AutoCommandBufferBuilder;
 }
 
 impl DrawMeshTrait for AutoCommandBufferBuilder {
-    fn draw_mesh(self, data: &mut Render) -> AutoCommandBufferBuilder {
+    fn draw_mesh(self, data: &mut Context) -> AutoCommandBufferBuilder {
         data.draw_mesh(self)
     }
 }

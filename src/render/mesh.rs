@@ -15,6 +15,7 @@ use render::vs;
 //type ConcreteGraphicsPipeline = GraphicsPipeline<SingleBufferDefinition<Vertex>, std::boxed::Box<vulkano::descriptor::PipelineLayoutAbstract + std::marker::Send + std::marker::Sync>, std::sync::Arc<vulkano::framebuffer::RenderPassAbstract + std::marker::Send + std::marker::Sync>>;
 //type ConcreteDescriptor = vulkano::descriptor::descriptor_set::PersistentDescriptorSet<std::sync::Arc<vulkano::pipeline::GraphicsPipeline<vulkano::pipeline::vertex::SingleBufferDefinition<render::Vertex>, std::boxed::Box<vulkano::descriptor::PipelineLayoutAbstract + std::marker::Send + std::marker::Sync>, std::sync::Arc<vulkano::framebuffer::RenderPassAbstract + std::marker::Send + std::marker::Sync>>>, (((), vulkano::descriptor::descriptor_set::PersistentDescriptorSetImg<std::sync::Arc<vulkano::image::ImmutableImage<vulkano::format::R8G8B8A8Srgb>>>), vulkano::descriptor::descriptor_set::PersistentDescriptorSetSampler)>;
 
+#[derive(Clone)]
 pub struct Mesh {
     pub vertex_buffer: Arc<CpuAccessibleBuffer<[Vertex]>>,
     pub texture: Arc<vulkano::image::ImmutableImage<vulkano::format::R8G8B8A8Srgb>>,
@@ -56,6 +57,7 @@ impl Mesh {
 
         let transform = Transform::new();
 
+
         Self {
             vertex_buffer,
             texture,
@@ -81,3 +83,9 @@ impl Mesh {
     }
 
 }
+
+/*
+impl Clone for Mesh {
+    fn clone(&self) -> Mesh { *self }
+}
+*/

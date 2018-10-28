@@ -15,6 +15,6 @@ layout(set = 0, binding = 1) uniform Data {
 
 
 void main() {
-    gl_Position =  uniforms.translation * uniforms.rotation * uniforms.scale * vec4(pos, 1.0);
+    gl_Position =  uniforms.translation * uniforms.rotation * vec4(pos, 1.0);
     v_tex_coords = uv;
 }

@@ -5,7 +5,7 @@ use cgmath::{
 
 };
 
-
+#[derive(Copy, Clone)]
 pub struct Transform {
     pub position: Vector3<f32>,
     pub rotation: Matrix4<f32>,
@@ -36,19 +36,19 @@ impl Transform {
     }
 
     pub fn rotate(&mut self, angle: f32, vector: [f32; 3]) {
-        self.rotation += Matrix4::from_axis_angle(Vector3::from(vector), cgmath::Deg(angle));
+        self.rotation += Matrix4::from_axis_angle(Vector3::from(vector), cgmath::Rad(angle));
     }
 
     pub fn rotate_x(&mut self, angle: f32) {
-        self.rotation += Matrix4::from_angle_x(cgmath::Deg(angle));
+        self.rotation += Matrix4::from_angle_x(cgmath::Rad(angle));
     }
 
     pub fn rotate_y(&mut self, angle: f32) {
-        self.rotation += Matrix4::from_angle_y(cgmath::Deg(angle));
+        self.rotation += Matrix4::from_angle_y(cgmath::Rad(angle));
     }
     
     pub fn rotate_z(&mut self, angle: f32) {
-        self.rotation += Matrix4::from_angle_z(cgmath::Deg(angle));
+        self.rotation += Matrix4::from_angle_z(cgmath::Rad(angle));
     }
 
     pub fn translation_matrix(&self) -> Matrix4<f32> {
