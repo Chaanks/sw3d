@@ -11,7 +11,12 @@ use vulkano;
 use render;
 use render::transform::Transform;
 use render::vs;
+use cgmath::{
+    SquareMatrix,
+    Matrix4,
+    Vector3,
 
+};
 //type ConcreteGraphicsPipeline = GraphicsPipeline<SingleBufferDefinition<Vertex>, std::boxed::Box<vulkano::descriptor::PipelineLayoutAbstract + std::marker::Send + std::marker::Sync>, std::sync::Arc<vulkano::framebuffer::RenderPassAbstract + std::marker::Send + std::marker::Sync>>;
 //type ConcreteDescriptor = vulkano::descriptor::descriptor_set::PersistentDescriptorSet<std::sync::Arc<vulkano::pipeline::GraphicsPipeline<vulkano::pipeline::vertex::SingleBufferDefinition<render::Vertex>, std::boxed::Box<vulkano::descriptor::PipelineLayoutAbstract + std::marker::Send + std::marker::Sync>, std::sync::Arc<vulkano::framebuffer::RenderPassAbstract + std::marker::Send + std::marker::Sync>>>, (((), vulkano::descriptor::descriptor_set::PersistentDescriptorSetImg<std::sync::Arc<vulkano::image::ImmutableImage<vulkano::format::R8G8B8A8Srgb>>>), vulkano::descriptor::descriptor_set::PersistentDescriptorSetSampler)>;
 
@@ -21,6 +26,7 @@ pub struct Mesh {
     pub texture: Arc<vulkano::image::ImmutableImage<vulkano::format::R8G8B8A8Srgb>>,
     pub sampler: Arc<vulkano::sampler::Sampler>,
     pub transform: Transform,
+
 }
 
 impl Mesh {
@@ -56,8 +62,6 @@ impl Mesh {
                                                     0.0, 1.0, 0.0, 0.0).unwrap();
 
         let transform = Transform::new();
-
-
         Self {
             vertex_buffer,
             texture,
@@ -67,16 +71,23 @@ impl Mesh {
     }
 
 
-    pub fn update(&self) -> render::vs::ty::Data {
+    pub fn update(&self, view: [[f32; 4]; 4], projection: [[f32; 4]; 4],  world: [[f32; 4]; 4] ) -> render::vs::ty::Data {
 
-            let translation: [[f32; 4]; 4] = self.transform.translation_matrix().into();
             let rotation: [[f32; 4]; 4] = self.transform.rotation.into();
             let scale: [[f32; 4]; 4] = self.transform.scale.into();
 
+            
+
+            let world = self.transform.scale * self.transform.translation_matrix();
+            let translation: [[f32; 4]; 4] = world.into();
+
+            let vieww: Matrix4<f32> = view.into();
+            let scale =  vieww * Matrix4::from_scale(0.1);
+
             let uniform_data = vs::ty::Data {
-                translation: translation,
-                rotation: rotation,
-                scale: scale,
+                model: world.into(),
+                projection: projection,
+                view: view,
             };
 
             uniform_data

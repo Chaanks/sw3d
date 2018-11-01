@@ -40,10 +40,19 @@ use vulkano::command_buffer::{ AutoCommandBuffer, DynamicState, AutoCommandBuffe
 use vulkano::sync::now;
 use vulkano::sync::GpuFuture;
 use vulkano_win::{ VkSurfaceBuild, required_extensions };
+use vulkano::format::Format;
+use vulkano::image::attachment::AttachmentImage;
 
 use winit;
 use winit::EventsLoop;
 
+
+use cgmath::{
+    SquareMatrix,
+    Matrix4,
+    Vector3,
+
+};
 
 const VALIDATION_LAYERS: &[&str] =  &[
     "VK_LAYER_LUNARG_standard_validation"
@@ -101,6 +110,9 @@ pub struct Context {
     pub graphics_pipeline: Arc<ConcreteGraphicsPipeline>,
     pub swapchain_framebuffers: Vec<Arc<FramebufferAbstract + Send + Sync>>,
     pub meshs: Vec<mesh::Mesh>,
+    pub world: Matrix4<f32>,
+    pub view:  Matrix4<f32>,
+    pub projection: Matrix4<f32>,
 }
 
 impl Context{
@@ -217,11 +229,17 @@ impl Context{
                     store: Store,
                     format: swapchain.format(),
                     samples: 1,
+                },
+                depth: {
+                    load: Clear,
+                    store: DontCare,
+                    format: Format::D16Unorm,
+                    samples: 1,
                 }
             },
             pass: {
                 color: [color],
-                depth_stencil: {}
+                depth_stencil: {depth}
             }
         ).unwrap());
 
@@ -237,7 +255,7 @@ impl Context{
         let fs = fs::Shader::load(device.clone())
             .expect("Failed to create fragment module");
 
-        println!("test");
+
         let graphics_pipeline = Arc::new(GraphicsPipeline::start()
             //.vertex_input(vulkano::pipeline::vertex::TwoBuffersDefinition::new())
             .vertex_input_single_buffer::<Vertex>()
@@ -245,16 +263,21 @@ impl Context{
             .triangle_list()
             .viewports_dynamic_scissors_irrelevant(1)
             .fragment_shader(fs.main_entry_point(), ())
+            .depth_stencil_simple_depth()
             .render_pass(Subpass::from(render_pass.clone(), 0).unwrap())
             .build(device.clone())
             .expect("Failed to create graphics pipeline")
             
         );
-        println!("test2");
+
+        let dimensions = images[0].dimensions();
+        let depth_buffer = AttachmentImage::transient(device.clone(), dimensions, Format::D16Unorm).unwrap();
+
         let swapchain_framebuffers = images.iter()
             .map(|image| {
                 let fba: Arc<FramebufferAbstract + Send + Sync> = Arc::new(Framebuffer::start(render_pass.clone())
                     .add(image.clone()).unwrap()
+                    .add(depth_buffer.clone()).unwrap()
                     .build().expect("Failed to create framebuffers"));
                     
                     fba
@@ -262,6 +285,10 @@ impl Context{
         ).collect::<Vec<_>>();
 
         let meshs = Vec::new();
+
+        let world = Matrix4::identity();
+        let view = Matrix4::from_translation(Vector3::new(0.0, 0.0, -1.0));
+        let projection = cgmath::perspective(cgmath::Deg(45.0), 800.0/800.0, 0.1, 100.0);
 
         (Self {
             surface,
@@ -277,6 +304,12 @@ impl Context{
             swapchain_framebuffers,
             graphics_pipeline,
             meshs,
+
+            world,
+            view,
+            projection,
+
+
         }, events_loop)
 
     }
@@ -309,7 +342,7 @@ impl Context{
     pub fn draw_meshs(&mut self, image_num: usize ) -> AutoCommandBuffer {         
         let mut _command_buffer = AutoCommandBufferBuilder::primary_one_time_submit(self.device.clone(), self.queue.family()).unwrap()
             .begin_render_pass(
-                self.swapchain_framebuffers[image_num].clone(), false,vec![[0.0, 0.0, 0.0, 1.0].into()])
+                self.swapchain_framebuffers[image_num].clone(), false,vec![[0.0, 0.0, 0.0, 1.0].into(), 1f32.into()])
                     .unwrap()
                     .draw_mesh(self);
 
@@ -322,8 +355,7 @@ impl Context{
     fn draw_mesh(&mut self, mut command_buffer: AutoCommandBufferBuilder) -> AutoCommandBufferBuilder {
         for mesh in self.meshs.iter() {
 
-
-            let uniform_data = mesh.update();
+            let uniform_data = mesh.update(self.view.into(), self.projection.into(), self.world.into());
             let uniform_buffer_subbuffer = self.ubo.next(uniform_data).unwrap();
 
             let set = Arc::new(vulkano::descriptor::descriptor_set::PersistentDescriptorSet::start(self.graphics_pipeline.clone(), 0)

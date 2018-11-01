@@ -26,7 +26,7 @@ impl Transform {
     }
 
     pub fn scale(&mut self, value: f32) {
-        self.scale += Matrix4::from_scale(value);
+        self.scale = Matrix4::from_scale(value);
     }
 
     pub fn translate(&mut self, x: f32, y: f32, z: f32) {
